@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Titanic KNN Classifier</title>
+    <style>
+      :root {
+        --bg: #f5f1e8;
+        --card: #fffdf8;
+        --primary: #d85a32;
+        --primary-dark: #9f351f;
+        --text: #29251f;
+        --muted: #746d63;
+        --success: #39795b;
+        --danger: #b84b3f;
+        --border: #e6dccb;
+        --ink-soft: #f2e8d8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background: radial-gradient(circle at top right, #f7d9b6 0, transparent 30%), var(--bg);
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 42px 24px 64px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: 0 20px 45px rgba(91, 61, 29, 0.11);
+        padding: clamp(24px, 5vw, 48px);
+      }
+
+      .eyebrow {
+        color: var(--primary);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin-top: 0;
+        margin-bottom: 8px;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        line-height: 1;
+      }
+
+      .intro {
+        max-width: 680px;
+        color: var(--muted);
+        font-size: 1.08rem;
+        line-height: 1.6;
+      }
+
+      #datasetStatus {
+        margin: 20px 0 28px;
+        padding: 12px 14px;
+        border-left: 4px solid var(--primary);
+        background: var(--ink-soft);
+        color: var(--muted);
+        font-family: "Segoe UI", sans-serif;
+        font-size: 0.9rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 14px;
+        background: #fbf6ed;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+
+      label {
+        font-weight: 600;
+        color: var(--text);
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+      }
+
+      button {
+        border: none;
+        border-radius: 4px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 14px 18px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(159, 53, 31, 0.22);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .result {
+        margin-top: 24px;
+        padding: 18px;
+        background: #fffaf1;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+
+      .result h2 {
+        margin-top: 0;
+        margin-bottom: 14px;
+      }
+
+      .result p {
+        margin: 8px 0;
+        font-size: 1rem;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      .result h2,
+      .dataset-info h2 {
+        font-size: 1.3rem;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+
+      .dataset-info {
+        margin-top: 32px;
+        padding-top: 28px;
+        border-top: 1px solid var(--border);
+      }
+
+      .dataset-info p,
+      .dataset-info li {
+        color: var(--muted);
+        line-height: 1.6;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      .feature-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+        padding: 0;
+        list-style: none;
+      }
+
+      .feature-list li {
+        padding: 12px;
+        background: var(--ink-soft);
+        border-radius: 4px;
+      }
+
+      .class-0 {
+        background: rgba(22, 163, 74, 0.12);
+        color: var(--success);
+      }
+
+      .class-1 {
+        background: rgba(220, 38, 38, 0.12);
+        color: var(--danger);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+
+      th, td {
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        text-align: center;
+      }
+
+      th {
+        background: var(--ink-soft);
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 20px 12px 40px;
+        }
+
+        th, td {
+          padding: 8px 5px;
+          font-size: 0.85rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <div class="eyebrow">Machine Learning Lab 04</div>
+        <h1>KNN ทำนายการรอดชีวิตบน Titanic</h1>
+        <p class="intro">ใช้ข้อมูลผู้โดยสารจริงจาก <strong>Titanic-Dataset.csv</strong> เพื่อค้นหาผู้โดยสารที่มีลักษณะใกล้เคียงกัน แล้วทำนายว่าผู้โดยสารจะรอดชีวิตหรือไม่</p>
+        <p id="datasetStatus">กำลังโหลดข้อมูล Titanic...</p>
+
+        <div class="grid">
+          <div class="field">
+            <label for="k">K</label>
+            <input id="k" type="number" value="5" min="1" max="20" />
+          </div>
+        </div>
+
+        <button id="runBtn">คำนวณผลทำนาย</button>
+
+        <div class="result">
+          <h2>ผลลัพธ์</h2>
+          <p id="testData">ผู้โดยสารตัวอย่าง: -</p>
+          <p id="nearestIndices">Nearest neighbor indices: -</p>
+          <p id="nearestClasses">Nearest classes: -</p>
+          <p id="predictedClass">Predicted class: -</p>
+          <div id="badge" class="badge">-</div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Index</th>
+                <th>Distance</th>
+                <th>Class</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <section class="dataset-info">
+          <h2>Dataset นี้คืออะไร?</h2>
+          <p>
+            <strong>Titanic-Dataset.csv</strong> เป็นข้อมูลผู้โดยสารบนเรือ Titanic โดยแต่ละแถวแทนผู้โดยสารหนึ่งคน
+            มีข้อมูลชั้นโดยสาร เพศ อายุ ค่าโดยสาร และผลการรอดชีวิต
+          </p>
+          <ul class="feature-list">
+            <li><strong>Pclass</strong><br />ชั้นโดยสาร</li>
+            <li><strong>Sex</strong><br />เพศผู้โดยสาร</li>
+            <li><strong>Age / Fare</strong><br />อายุและค่าโดยสาร</li>
+            <li><strong>Survived</strong><br />0 ไม่รอด / 1 รอด</li>
+          </ul>
+          <p>
+            ไฟล์นี้มี class จริงคือ <strong>Survived</strong> จึงไม่ต้องสร้าง label เอง
+            ข้อมูลข้อความจะถูกแปลงเป็นตัวเลข ค่าว่างของอายุจะเติมด้วย median และฟีเจอร์ทั้งหมดจะถูกปรับสเกลก่อนคำนวณระยะห่าง
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      let trainData = [];
+
+      let testData = [];
+
+      function calculateKnn(k) {
+
+        const rows = trainData.map((row, index) => {
+          const [a, b, c, d, e, f, g] = row;
+          const distance = Math.sqrt(
+            (a - testData[0]) ** 2 +
+            (b - testData[1]) ** 2 +
+            (c - testData[2]) ** 2 +
+            (d - testData[3]) ** 2 +
+            (e - testData[4]) ** 2 +
+            (f - testData[5]) ** 2 +
+            (g - testData[6]) ** 2
+          );
+          return { index, distance, classLabel: row[7] };
+        });
+
+        const nearest = rows
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, k);
+
+        const classCounts = new Map();
+        nearest.forEach((item) => {
+          classCounts.set(item.classLabel, (classCounts.get(item.classLabel) || 0) + 1);
+        });
+
+        let predictedClass = 0;
+        let maxCount = -1;
+        classCounts.forEach((count, cls) => {
+          if (count > maxCount) {
+            maxCount = count;
+            predictedClass = cls;
+          }
+        });
+
+        return { nearest, predictedClass };
+      }
+
+      function renderResult() {
+        if (!trainData.length) return;
+        const k = Number(document.getElementById('k').value) || 5;
+
+        const { nearest, predictedClass } = calculateKnn(k);
+
+        document.getElementById('testData').textContent = `ผู้โดยสารตัวอย่าง: [${testData.map((value) => value.toFixed(3)).join(', ')}]`;
+        document.getElementById('nearestIndices').textContent = `Nearest neighbor indices: ${nearest.map((n) => n.index).join(', ')}`;
+        document.getElementById('nearestClasses').textContent = `Nearest classes: ${nearest.map((n) => n.classLabel).join(', ')}`;
+        document.getElementById('predictedClass').textContent = `Predicted class: ${predictedClass}`;
+
+        const badge = document.getElementById('badge');
+        badge.textContent = `Class ${predictedClass}`;
+        badge.className = `badge class-${predictedClass}`;
+
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = nearest
+          .map((n) => `
+            <tr>
+              <td>${n.index}</td>
+              <td>${n.distance.toFixed(4)}</td>
+              <td>${n.classLabel}</td>
+            </tr>
+          `)
+          .join('');
+      }
+
+      async function loadDataset() {
+        const response = await fetch('../lab2/Titanic-Dataset.csv');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const csv = await response.text();
+        const lines = csv.trim().split(/\r?\n/).slice(1);
+        const parseCsvLine = (line) => {
+          const values = [];
+          let value = '';
+          let quoted = false;
+          for (const character of line) {
+            if (character === '"') quoted = !quoted;
+            else if (character === ',' && !quoted) {
+              values.push(value);
+              value = '';
+            } else value += character;
+          }
+          values.push(value);
+          return values;
+        };
+
+        const records = lines.map(parseCsvLine).map((columns) => ({
+          survived: Number(columns[1]),
+          pclass: Number(columns[2]),
+          sex: columns[4] === 'male' ? 1 : 0,
+          age: Number(columns[5]),
+          sibSp: Number(columns[6]),
+          parch: Number(columns[7]),
+          fare: Number(columns[9]),
+          embarked: { C: 0, Q: 1, S: 2 }[columns[11]],
+        }));
+
+        const ages = records.map((row) => row.age).filter(Number.isFinite);
+        const ageMedian = ages.sort((a, b) => a - b)[Math.floor(ages.length / 2)];
+        records.forEach((row) => {
+          if (!Number.isFinite(row.age)) row.age = ageMedian;
+          if (!Number.isFinite(row.embarked)) row.embarked = 2;
+        });
+
+        const rawFeatures = records.map((row) => [
+          row.pclass, row.sex, row.age, row.sibSp, row.parch, row.fare, row.embarked,
+        ]);
+        testData = rawFeatures[0].slice();
+        const min = rawFeatures[1].map((_, column) => Math.min(...rawFeatures.slice(1).map((row) => row[column])));
+        const max = rawFeatures[1].map((_, column) => Math.max(...rawFeatures.slice(1).map((row) => row[column])));
+
+        trainData = rawFeatures.slice(1).map((features, index) => [
+          ...features.map((value, column) => (value - min[column]) / ((max[column] - min[column]) || 1)),
+          records[index + 1].survived,
+        ]);
+        testData = testData.map((value, column) => (value - min[column]) / ((max[column] - min[column]) || 1));
+
+        document.getElementById('datasetStatus').textContent = `โหลด Titanic-Dataset.csv แล้ว ${records.length.toLocaleString()} แถว | class 0 = ไม่รอด, class 1 = รอด`;
+        renderResult();
+      }
+
+      document.getElementById('runBtn').addEventListener('click', renderResult);
+      loadDataset().catch((error) => {
+        document.getElementById('datasetStatus').textContent = `โหลด Titanic-Dataset.csv ไม่สำเร็จ: ${error.message}`;
+      });
+    </script>
+  </body>
+</html>
